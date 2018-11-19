@@ -1,15 +1,23 @@
 package com.example.zhouhaibin.ices;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import android_serialport_api.SerialPort;
+
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+
+import com.example.zhouhaibin.ices.Activity.CameraActivity;
+import com.example.zhouhaibin.ices.Activity.test_camActivity;
+import com.example.zhouhaibin.ices.SerialportHelper.RecvSerialCallback;
+import com.example.zhouhaibin.ices.SerialportHelper.SerialPortHandle;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,32 +26,58 @@ import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity {
 
-
+    /*
     protected SerialPort serialPort;
     protected InputStream inputStream;
     protected OutputStream outputStream;
-    protected ReadThread readThread;
+    */
 
+    private SerialPortHandle serialPortHandle;
     private Button button_start;
+    private Button button_cam;
 
+    private RecvSerialCallback recvSerialCallback = new RecvSerialCallback() {
+        @Override
+        public void onRecvObjectIn() {
+            Log.d("serial", "onRecvData: in");
+        }
+
+        @Override
+        public void onRecvObjectOut() {
+            Log.d("serial", "onRecvData: out");
+        }
+
+        @Override
+        public void onRecvData(String recvData) {
+            //Log.d("serial", "onRecvData: "+recvData);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        serialPortHandle = new SerialPortHandle("/dev/ttyACM0",9600,0);
+        serialPortHandle.setRecvSerialCallback(recvSerialCallback);
         button_start = (Button) findViewById(R.id.button_start);
+        button_cam = (Button) findViewById(R.id.button_capture);
+        init_button();
 
+    }
+    private void init_button(){
         button_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                serialPortHandle.startRecv();
+                /*
                 Log.d("开始启动", "onCreate: start thread");
                 try{
                     serialPort = new SerialPort(new File("/dev/ttyUSB0"),9600,0);
                     inputStream = serialPort.getInputStream();
                     outputStream = serialPort.getOutputStream();
-                    readThread = new ReadThread();
-                    readThread.start();
+                    //readThread = new ReadThread();
+                    //readThread.start();
                 }catch (SecurityException e){
                     Log.d("debug","启动失败");
                     e.printStackTrace();
@@ -51,45 +85,18 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("debug", "onCreate: 启动失败");
                     e.printStackTrace();
                 }
+                */
             }
+
         });
-    }
-
-    private class ReadThread extends Thread{
-
-        @Override
-        public void run(){
-            super.run();
-            while (!isInterrupted()){
-                int size;
-                Log.d("debug", "run:接收线程已经开启");
-                try{
-                    byte[] buffer = new byte[64];
-                    if (inputStream==null){
-                        return;
-                    }
-                    size = inputStream.read(buffer);
-                    if(size>0){
-                        onDataReceived(buffer, size);
-                    }
-                }
-                catch (IOException e){
-                    e.printStackTrace();
-                    return;
-                }
-            }
-        }
-
-    }
-
-    protected void onDataReceived(final byte[] buffer,final int size){
-        runOnUiThread(new Runnable() {
+        button_cam.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                String recinfo = new String(buffer,0,size);
-                Log.d("debug", "run: ====>"+recinfo);
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, test_camActivity.class);
+                startActivity(intent);
             }
         });
+
     }
 
     @Override
